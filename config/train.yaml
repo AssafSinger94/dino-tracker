@@ -1,0 +1,65 @@
+########################## checkpointing ##########################
+checkpoint_interval: 2500
+
+
+########################## data loader ##########################
+video_resw: 854
+video_resh: 476
+
+fg_traj_ratio: 0.5
+keep_traj_in_cpu: false # set to true for long videos (> 150 frames)
+train_batch_size: 512
+batch_n_frames: 4
+# sampler_batch_iterations: 1000 # uncomment for large videos
+
+
+########################## optimization ##########################
+total_iterations: 10000
+lr_delta_dino: 0.01
+lr_cnn_refiner: 0.01
+
+
+# Schedulers
+apply_scheduler_every: 40
+scheduler_gamma: 0.999
+
+
+# cycle-consistency loss
+lambda_cyc: 0.5
+apply_cyc_after: 5000
+cyc_n_frames: 4
+cyc_batch_size_per_frame: 256
+cyc_fg_points_ratio: 0.7
+cyc_thresh: 4
+cyc_gamma: 0.8
+
+
+# Refined feature regulariation
+lambda_emb_norm: 0.0001
+lambda_angle: 0.0001
+
+
+# contrastive loss
+lambda_cl_dino_bb: 0.00025
+lambda_cl_ref_bb: 0.00005
+cl_n_frames: 4
+cl_points_per_pair: 256
+cl_fg_points_ratio: 0.7
+cl_temp: 0.1
+cl_div_dino_bb: 700
+cl_div_ref_bb: 900
+apply_cl_ref_after: 5000
+
+# weighting ambiguity
+bb_amb_sig_a: 27
+bb_amb_sig_b: -5.7
+
+
+########################## DINO backbone ##########################
+stride: 7
+dino_patch_size: 14
+
+
+########################## Occlusion prediction ##########################
+anchor_cosine_similarity_threshold: 0.7
+cosine_similarity_threshold: 0.6
