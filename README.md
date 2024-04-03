@@ -4,6 +4,11 @@
 
 
 
+https://github.com/AssafSinger94/dino-tracker/assets/43016459/bcd7d57a-1977-4f05-a2f4-ddd859524598
+
+
+
+
 ## Usage
 
 1. [Setup](#setup)
