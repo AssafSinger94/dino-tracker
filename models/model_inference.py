@@ -127,7 +127,7 @@ class ModelInference(torch.nn.Module):
 
 
     # ----------------- Anchor Trajectories (slower, but less memory-consuming) -----------------
-    def _get_model_preds_at_anchors(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
+    def _get_model_preds_at_anchors_old(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
         """ preds: N"""
         batch_size = batch_size if batch_size is not None else preds.shape[0]
         
@@ -155,7 +155,7 @@ class ModelInference(torch.nn.Module):
         return cycle_coords
     
     # ----------------- Anchor Trajectories -----------------
-    def _get_model_preds_at_anchors_old(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
+    def _get_model_preds_at_anchors(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
         """ preds: T. anchor_indices (N_anchors).
         Returns: cycle_coords, N_anchors x T x 2.
         """
