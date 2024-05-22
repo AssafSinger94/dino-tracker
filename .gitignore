@@ -1,4 +1,11 @@
 *__pycache__*
 .vscode
 .DS_Store
-
+bash
+logs
+.vscode
+dataset/tapvid-davis
+dataset/tapvid-davis-sampled-4
+dataset/tapvid-davis-sampled-2
+dataset/tapvid-davis-sampled-test
+dataset/tapvid-davis-sampled-2-test
