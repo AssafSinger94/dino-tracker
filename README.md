@@ -172,10 +172,7 @@ The output CSV file contains all TAP-Vid metrics (position accuracy, occlusion a
 @misc{dino_tracker_2024,
     author        = {Tumanyan, Narek and Singer, Assaf and Bagon, Shai and Dekel, Tali},
     title         = {DINO-Tracker: Taming DINO for Self-Supervised Point Tracking in a Single Video},
-    month         = {March},
     year          = {2024},
-    eprint        = {2403.14548},
-    archivePrefix = {arXiv},
-    primaryClass  = {cs.CV}
+    booktitle = {European Conference on Computer Vision (ECCV)}
 }
 ```
