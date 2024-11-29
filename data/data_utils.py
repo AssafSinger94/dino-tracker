@@ -76,7 +76,7 @@ def bilinear_sampler(img, coords, mode='bilinear', mask=False):
     return img
 
 
-def load_video(video_folder: str, resize=None, num_frames=None):
+def load_video(video_folder: str, resize=None, num_frames=None, to_tensor=True):
     """
     Loads video from folder, resizes frames as desired, and outputs video tensor.
 
@@ -97,11 +97,15 @@ def load_video(video_folder: str, resize=None, num_frames=None):
     
     for file in input_files:
         if resize is not None:
-            video.append(transforms.ToTensor()(Image.open(str(file)).resize((resw, resh), Image.LANCZOS)))
+            img = Image.open(str(file)).resize((resw, resh), Image.LANCZOS)
+            img = transforms.ToTensor()(img) if to_tensor else img
+            video.append(img)
         else:
-            video.append(transforms.ToTensor()(Image.open(str(file))))
+            img = Image.open(str(file))
+            img = transforms.ToTensor()(img) if to_tensor else img
+            video.append(img)
     
-    return torch.stack(video)
+    return torch.stack(video) if to_tensor else video
 
 
 def save_video(video, output_path, fps=30):

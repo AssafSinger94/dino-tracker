@@ -28,7 +28,7 @@ def save_dino_embed_video(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="./config/preprocessing.yaml", type=str)
-    parser.add_argument("--data-path", default="./dataset/libby", type=str, required=True)
+    parser.add_argument("--data-path", default="./dataset/tapvid-davis/davis_480/0", type=str, required=True)
     parser.add_argument("--for-mask", action="store_true", default=False)
 
     args = parser.parse_args()

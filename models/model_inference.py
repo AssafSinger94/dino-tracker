@@ -126,22 +126,23 @@ class ModelInference(torch.nn.Module):
         return trajectories_cosine_similarities
 
 
-    # ----------------- Anchor Trajectories -----------------
-    def _get_model_preds_at_anchors(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
+    # ----------------- Anchor Trajectories (slower, but less memory-consuming) -----------------
+    def _get_model_preds_at_anchors_old(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
         """ preds: N"""
         batch_size = batch_size if batch_size is not None else preds.shape[0]
         
         cycle_coords = []
+        # for each anchor frame in anchor_indices, get tracking predictions from all preds to the anchor frame
         for vis_frame in anchor_indices:
             # iterate over frames_set_t in batches of size batch_size
             coords = []
-            for i in range(0, preds.shape[0], batch_size):
-                end_idx = min(i + batch_size, preds.shape[0])
-                frames_set_t = torch.arange(i, end_idx, device=model.device)
-                frames_set_t = torch.cat([ torch.tensor([vis_frame], device=model.device), frames_set_t ]).int()
+            for st_idx in range(0, preds.shape[0], batch_size):
+                end_idx = min(st_idx + batch_size, preds.shape[0])
+                frames_set_t = torch.arange(st_idx, end_idx, device=model.device) # source frames
+                frames_set_t = torch.cat([ torch.tensor([vis_frame], device=model.device), frames_set_t ]).int() # add target frame (vis_frame)
                 source_frame_indices = torch.arange(1, frames_set_t.shape[0], device=model.device)
                 target_frame_indices = torch.tensor([0]*(frames_set_t.shape[0]-1), device=model.device)
-                inp = preds[i:end_idx], source_frame_indices, target_frame_indices, frames_set_t
+                inp = preds[st_idx:end_idx], source_frame_indices, target_frame_indices, frames_set_t
                 batch_coords = model(inp)
                 batch_coords = range_normalizer.unnormalize(batch_coords, src=(-1, 1), dims=[0, 1])
                 coords.append(batch_coords)
@@ -152,6 +153,25 @@ class ModelInference(torch.nn.Module):
         cycle_coords = torch.stack(cycle_coords) # N_anchors x T x 2
         
         return cycle_coords
+    
+    # ----------------- Anchor Trajectories -----------------
+    def _get_model_preds_at_anchors(self, model, range_normalizer, preds, anchor_indices, batch_size=None):
+        """ preds: T. anchor_indices (N_anchors).
+        Returns: cycle_coords, N_anchors x T x 2.
+        """
+        T = preds.shape[0]
+        batch_size = batch_size if batch_size is not None else T
+        
+        frames_set_t = torch.arange(0, T).int() # [0, 1, 2, ..., T-1]
+        source_frames = torch.arange(0, T, device=model.device)
+        source_frame_indices = source_frames.repeat(anchor_indices.shape[0]) # T*N_anchors, [0, 1, ..., T-1, 0, 1, ..., T-1, ...]
+        query_points = preds.repeat(anchor_indices.shape[0], 1) # (T*N_anchors) x 3
+        target_frame_indices = anchor_indices.unsqueeze(1).repeat(1, source_frames.shape[0]).view(-1) # T*N_anchors, [anchor_indices[0], ..., anchor_indices[0], anchor_indices[1], ..., anchor_indices[1], ...]
+        inp = query_points, source_frame_indices, target_frame_indices, frames_set_t
+        cycle_coords = model(inp) # (T*N_anchors) x 2
+        cycle_coords = range_normalizer.unnormalize(cycle_coords, src=(-1, 1), dims=[0, 1])
+        cycle_coords = cycle_coords.view(anchor_indices.shape[0], T, 2) # N_anchors x T x 2
+        return cycle_coords # N_anchors x T x 2
     
     def compute_anchor_trajectories(self, trajectories: torch.Tensor, cos_sims: torch.Tensor, batch_size=None) -> torch.Tensor:
         N, T = trajectories.shape[:2]

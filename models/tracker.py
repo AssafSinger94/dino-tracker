@@ -133,13 +133,15 @@ class Tracker(nn.Module):
         self.refined_features = refined_features
         if move_dino_to_cpu:
             self.dino_embed_video = self.dino_embed_video.to("cpu")
+        torch.cuda.empty_cache()
+        gc.collect()
     
     def uncache_refined_embeddings(self, move_dino_to_gpu=False):
         self.refined_features = None
-        torch.cuda.empty_cache()
-        gc.collect()
         if move_dino_to_gpu:
             self.dino_embed_video = self.dino_embed_video.to("cuda")
+        torch.cuda.empty_cache()
+        gc.collect()
     
     def save_weights(self, iter):
         torch.save(self.tracker_head.state_dict(), Path(self.ckpt_path) / f"tracker_head_{iter}.pt")
@@ -300,13 +302,15 @@ class Tracker(nn.Module):
 
         return cycle_consistency_preds
 
-    def forward(self, inp, use_raw_features=False):
+    def forward(self, inp, use_raw_features=False, cache_raw_features=False):
         """
         inp: source_points_unnormalized, source_frame_indices, target_frame_indices, frames_set_t; where
-        source_points_unnormalized: B x 3. ((x, y, t) in image scale - NOT normalized)
-        source_frame_indices: the indices of frames of source points in frames_set_t
-        target_frame_indices: the indices of target frames in frames_set_t
-        frames_set_t: N, 0 to T-1 (NOT normalized)
+            source_points_unnormalized: B x 3. ((x, y, t) in image scale - NOT normalized)
+            source_frame_indices: the indices of frames of source points in frames_set_t
+            target_frame_indices: the indices of target frames in frames_set_t
+            frames_set_t: N, 0 to T-1 (NOT normalized)
+        use_raw_features: if True, use raw embeddings from DINO.
+        cache_raw_features: if True, cache raw embeddings for future use.
         """
         frames_set_t = inp[-1]
         
@@ -314,12 +318,13 @@ class Tracker(nn.Module):
             frame_embeddings = raw_embeddings = self.get_dino_embed_video(frames_set_t=frames_set_t)
         elif self.refined_features is not None: # load from cache
             frame_embeddings = self.refined_features[frames_set_t]
-            raw_embeddings = self.dino_embed_video[frames_set_t.to(self.dino_embed_video.device)]
+            if cache_raw_features:
+                self.raw_embeddings = self.dino_embed_video[frames_set_t.to(self.dino_embed_video.device)]
         else:
             frame_embeddings, residual_embeddings, raw_embeddings = self.get_refined_embeddings(frames_set_t, return_raw_embeddings=True)
             self.residual_embeddings = residual_embeddings
+            self.raw_embeddings = raw_embeddings
         self.frame_embeddings = frame_embeddings
-        self.raw_embeddings = raw_embeddings
         coords = self.get_point_predictions(inp, frame_embeddings)
 
         return coords
